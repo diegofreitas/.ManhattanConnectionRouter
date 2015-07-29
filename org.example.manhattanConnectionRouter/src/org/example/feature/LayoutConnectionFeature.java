@@ -16,17 +16,16 @@ public class LayoutConnectionFeature extends
 		AbstractLayoutFeature {
 
 	boolean hasDoneChanges = false;
+	private AnchorVerifier av;
 
-	public LayoutConnectionFeature(IFeatureProvider fp) {
+	public LayoutConnectionFeature(IFeatureProvider fp,AnchorVerifier av) {
 		super(fp);
+		this.av = av;
 	}
 
 	@Override
 	public boolean canLayout(ILayoutContext context) {
 		return (context.getPictogramElement() instanceof Connection);
-		// Connection connection = (Connection) context.getPictogramElement();
-		// implement your logic here
-//		return true;
 	}
 
 	@Override
@@ -40,7 +39,7 @@ public class LayoutConnectionFeature extends
 			Connection connection = (Connection) context.getPictogramElement();
 			IFeatureProvider fp = getFeatureProvider();
 			IConnectionRouter router = null;
-			router = new ExtendedManhattanConnectionRouter(fp);
+			router = new ExtendedManhattanConnectionRouter(fp, av);
 			if (router != null) {
 				hasDoneChanges = router.route(connection);
 				router.dispose();

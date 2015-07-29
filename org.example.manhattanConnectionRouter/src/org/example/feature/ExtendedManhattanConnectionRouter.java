@@ -12,9 +12,8 @@ import org.eclipse.graphiti.mm.pictograms.Diagram;
 
 public class ExtendedManhattanConnectionRouter extends BaseManhattanConnectionRouter {
 
-	public ExtendedManhattanConnectionRouter(IFeatureProvider fp) {
-		super(fp);
-		// TODO Auto-generated constructor stub
+	public ExtendedManhattanConnectionRouter(IFeatureProvider fp, AnchorVerifier av) {
+		super(fp, av);
 	}
 
 	protected List<ContainerShape> findAllShapes() {
@@ -24,24 +23,11 @@ public class ExtendedManhattanConnectionRouter extends BaseManhattanConnectionRo
 		while (iter.hasNext()) {
 			EObject o = iter.next();
 			if (o instanceof ContainerShape) {
-				// this is a potential collision shape
+
 				ContainerShape shape = (ContainerShape)o;
-//				BPMNShape bpmnShape = BusinessObjectUtil.getFirstElementOfType(shape, BPMNShape.class);
-//				if (bpmnShape==null)
-//					continue;
-//				if (shape==source || shape==target)
-//					continue;
-				// ignore containers (like Lane, SubProcess, etc.) if the source
-				// or target shapes are children of the container's hierarchy
 				if (shape==source.eContainer() || shape==target.eContainer())
 					continue;
-				
-				// ignore some containers altogether
-//				BaseElement be = bpmnShape.getBpmnElement();
-//				if (be instanceof Lane)
-//					continue;
-				// TODO: other criteria here?
-	
+
 				allShapes.add(shape);
 			}
 		}

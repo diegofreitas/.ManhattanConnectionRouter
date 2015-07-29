@@ -11,9 +11,9 @@ public class HelperAnchotUtil extends AnchorUtil {
 		IDimension size = Graphiti.getGaService().calculateSize(ga);
 		int w = size.getWidth();
 		int h = size.getHeight();
-//		createBoundaryAnchor(shape, AnchorLocation.TOP, w / 2, 0);
+
 		createBoundaryAnchor(shape, AnchorLocation.RIGHT, w, h / 2);
-//		createBoundaryAnchor(shape, AnchorLocation.BOTTOM, w / 2, h);
+
 		createBoundaryAnchor(shape, AnchorLocation.LEFT, 0, h / 2);
 	}
 }
