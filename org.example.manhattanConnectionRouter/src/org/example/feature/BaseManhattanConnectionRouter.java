@@ -12,6 +12,7 @@
  ******************************************************************************/
 package org.example.feature;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,6 +39,7 @@ import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.FixPointAnchor;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.Graphiti;
+import org.example.feature.BaseManhattanConnectionRouter.Coordinate;
 
 
 /**
@@ -533,7 +535,7 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 		f_score.put(start, g_score.getOrDefault(start, Integer.MAX_VALUE)+heuristicCostEstimate(start, goal));
 
 		while(!openset.isEmpty()) {
-			Coordinate current = lowestFScore(f_score);
+			Coordinate current = lowestFScore(openset, f_score);
 			if(current.equals(goal)) return reconstructPath(came_from, goal);
 
 			openset.remove(current);
@@ -568,11 +570,11 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 		return Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
 	}
 
-	protected Coordinate lowestFScore(Map<Coordinate, Integer> f_score) {
+	protected Coordinate lowestFScore(Set<Coordinate> openset, Map<Coordinate, Integer> f_score) {
 		Entry<Coordinate, Integer> min = null;
-		for(Entry<Coordinate, Integer> entry : f_score.entrySet()) {
-			if(min==null || min.getValue() > entry.getValue()) {
-				min = entry;
+		for(Coordinate curr:openset) {
+			if(min==null || min.getValue() > f_score.getOrDefault(curr, Integer.MAX_VALUE)) {
+				min = new AbstractMap.SimpleEntry<Coordinate, Integer>(curr, f_score.get(curr));
 			}
 		}
 		return min.getKey();
