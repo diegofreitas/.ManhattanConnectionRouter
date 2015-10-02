@@ -13,21 +13,18 @@
 package org.example.feature;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 
 import org.eclipse.bpmn2.modeler.core.di.DIUtils;
 import org.eclipse.bpmn2.modeler.core.features.BendpointConnectionRouter;
 import org.eclipse.bpmn2.modeler.core.features.ConnectionRoute;
 import org.eclipse.bpmn2.modeler.core.features.DetourPoints;
-import org.eclipse.bpmn2.modeler.core.features.RouteSolver;
 import org.eclipse.bpmn2.modeler.core.utils.AnchorUtil;
 import org.eclipse.bpmn2.modeler.core.utils.AnchorUtil.AnchorLocation;
 import org.eclipse.bpmn2.modeler.core.utils.AnchorUtil.BoundaryAnchor;
@@ -41,7 +38,6 @@ import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.FixPointAnchor;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.Graphiti;
-import org.eclipse.graphiti.services.IPeLayoutService;
 
 
 /**
@@ -110,14 +106,16 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 			}
 		}
 
-		Point start;
-		Point end;
+		Point startP;
+		Point endP;
 
-		start = GraphicsUtil.createPoint(sourceAnchor);
-		end = GraphicsUtil.createPoint(targetAnchor);
+		startP = GraphicsUtil.createPoint(sourceAnchor);
+		endP = GraphicsUtil.createPoint(targetAnchor);
+		Coordinate start = new Coordinate(startP.getX(), startP.getY());
+		Coordinate end = new Coordinate(endP.getX(), endP.getY());
 		ConnectionRoute route = new ConnectionRoute(this, allRoutes.size()+1, source,target);
 
-		List<Point> astarResult = aStar(start, end);
+		List<Coordinate> astarResult = aStar(start, end);
 		List<Point> reducedAstar = calculateSegments(astarResult);
 		route.getPoints().addAll(reducedAstar);
 
@@ -468,46 +466,82 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 		return anchorList;
 	}
 
-	protected List<Point> calculateSegments(List<Point> points) {
+	protected List<Point> calculateSegments(List<Coordinate> points) {
 		List<Point> result = new ArrayList<Point>();
-		result.add(points.get(0));
+		result.add(GraphicsUtil.createPoint(points.get(0).x, points.get(0).y));
 		if(points.size()>2) {
-			Iterator<Point> iter = points.iterator();
-			Point prev = iter.next();
+			Iterator<Coordinate> iter = points.iterator();
+			Coordinate prev = iter.next();
 			while(iter.hasNext()) {
-				Point curr = iter.next();
-				Point next = iter.next();
-				if(prev.getX()==curr.getX()&&curr.getX()!=next.getX()) result.add(curr);
-				else if(prev.getY()==curr.getY()&&curr.getY()!=next.getY()) result.add(curr);
+				Coordinate curr = iter.next();
+				Coordinate next = iter.next();
+				if(prev.x==curr.x&&curr.x!=next.x) result.add(GraphicsUtil.createPoint(curr.x, curr.y));
+				if(prev.y==curr.y&&curr.y!=next.y) result.add(GraphicsUtil.createPoint(curr.x, curr.y));
 				prev = iter.next();
 			}
 		}
-		result.add(points.get(points.size()-1));
+		Coordinate last = points.get(points.size()-1);
+		result.add(GraphicsUtil.createPoint(last.x, last.y));
 		return result;
+	}
+	
+	protected static class Coordinate {
+		int x;
+		int y;
+		
+		public Coordinate(int x, int y) {
+			this.x = x;
+			this.y = y;
+		}
+		
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + x;
+			result = prime * result + y;
+			return result;
+		}
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			Coordinate other = (Coordinate) obj;
+			if (x != other.x)
+				return false;
+			if (y != other.y)
+				return false;
+			return true;
+		}
 	}
 
 	//Based on https://en.wikipedia.org/wiki/A*_search_algorithm
-	protected List<Point> aStar(Point start, Point goal) {
-		Set<Point> closedset = new TreeSet<Point>();
-		Set<Point> openset = new TreeSet<Point>();
+	protected List<Coordinate> aStar(Coordinate start, Coordinate goal) {
+		Set<Coordinate> closedset = new HashSet<Coordinate>();
+		Set<Coordinate> openset = new HashSet<Coordinate>();
 		openset.add(start);
-		Map<Point, Point> came_from = new TreeMap<Point, Point>();
+		Map<Coordinate, Coordinate> came_from = new HashMap<Coordinate, Coordinate>();
 
-		Map<Point, Integer> g_score = new TreeMap<Point, Integer>();
+		Map<Coordinate, Integer> g_score = new HashMap<Coordinate, Integer>();
 		g_score.put(start, 0);
 
-		Map<Point, Integer> f_score = new TreeMap<Point, Integer>();
+		Map<Coordinate, Integer> f_score = new HashMap<Coordinate, Integer>();
 		f_score.put(start, g_score.getOrDefault(start, Integer.MAX_VALUE)+heuristicCostEstimate(start, goal));
 
 		while(!openset.isEmpty()) {
-			Point current = lowestFScore(f_score);
-			if(current==goal) return reconstructPath(came_from, goal);
+			Coordinate current = lowestFScore(f_score);
+			if(current.equals(goal)) return reconstructPath(came_from, goal);
 
 			openset.remove(current);
 			closedset.add(current);
-			for(Point neighbor:neighborNodes(current)) {
+			for(Coordinate neighbor:neighborNodes(current)) {
 				if(closedset.contains(neighbor)) continue;
-				ContainerShape hadCollision = getCollision(neighbor, neighbor);
+				ContainerShape hadCollision = getCollision(GraphicsUtil.createPoint(neighbor.x, neighbor.y),
+						GraphicsUtil.createPoint(neighbor.x, neighbor.y));
 				if(hadCollision!=null) {
 					closedset.add(neighbor);
 					continue;
@@ -524,19 +558,19 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 			}
 		}
 
-		List<Point> alterResult = new ArrayList<Point>();
+		List<Coordinate> alterResult = new ArrayList<Coordinate>();
 		alterResult.add(start);
 		alterResult.add(goal);
 		return alterResult;
 	}
 
-	protected int heuristicCostEstimate(Point a, Point b) {
-		return Math.abs(a.getX()-b.getX())+Math.abs(a.getY()-b.getY());
+	protected int heuristicCostEstimate(Coordinate a, Coordinate b) {
+		return Math.abs(a.x-b.x)+Math.abs(a.y-b.y);
 	}
 
-	protected Point lowestFScore(Map<Point, Integer> f_score) {
-		Entry<Point, Integer> min = null;
-		for(Entry<Point, Integer> entry : f_score.entrySet()) {
+	protected Coordinate lowestFScore(Map<Coordinate, Integer> f_score) {
+		Entry<Coordinate, Integer> min = null;
+		for(Entry<Coordinate, Integer> entry : f_score.entrySet()) {
 			if(min==null || min.getValue() > entry.getValue()) {
 				min = entry;
 			}
@@ -544,17 +578,17 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 		return min.getKey();
 	}
 
-	protected List<Point> neighborNodes(Point current) {
-		List<Point> list = new ArrayList<Point>();
-		list.add(GraphicsUtil.createPoint(current.getX()+1, current.getY()));
-		list.add(GraphicsUtil.createPoint(current.getX(), current.getY()+1));
-		list.add(GraphicsUtil.createPoint(current.getX()-1, current.getY()));
-		list.add(GraphicsUtil.createPoint(current.getX(), current.getY()-1));
+	protected List<Coordinate> neighborNodes(Coordinate current) {
+		List<Coordinate> list = new ArrayList<Coordinate>();
+		list.add(new Coordinate(current.x+1, current.y));
+		list.add(new Coordinate(current.x-1, current.y));
+		list.add(new Coordinate(current.x, current.y+1));
+		list.add(new Coordinate(current.x, current.y-1));
 		return list;
 	}
 
-	protected List<Point> reconstructPath(Map<Point, Point> came_from, Point current) {
-		List<Point> totalPath = new ArrayList<Point>();
+	protected List<Coordinate> reconstructPath(Map<Coordinate, Coordinate> came_from, Coordinate current) {
+		List<Coordinate> totalPath = new ArrayList<Coordinate>();
 		totalPath.add(current);
 		while(came_from.containsKey(current)) {
 			current = came_from.get(current);
