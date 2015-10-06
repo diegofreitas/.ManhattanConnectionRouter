@@ -331,13 +331,23 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 
 	protected List<Coordinate> neighborNodes(Coordinate current, Coordinate goal) {
 		List<Coordinate> list = new ArrayList<Coordinate>();
-		int heuristicCostEstimate  = heuristicCostEstimate(current, goal);
+		int heuristicCostEstimate  = remainingDistance(current, goal);
 		int step = heuristicCostEstimate > A_STEP ? A_STEP: heuristicCostEstimate ;
 		list.add(new Coordinate(current.x+step, current.y));
 		list.add(new Coordinate(Math.abs(current.x-step), current.y));
 		list.add(new Coordinate(current.x, current.y+step));
 		list.add(new Coordinate(current.x, Math.abs(current.y-step)));
 		return list;
+	}
+	
+	private int remainingDistance(Coordinate a, Coordinate b){
+		if(a.x == b.x && a.y == b.y){
+			return 0;
+		} else if (a.x == b.x){
+			return Math.abs(a.y - b.y);
+		} else {
+			return Math.abs(a.x - b.x);
+		}
 	}
 
 	protected List<Coordinate> reconstructPath(Map<Coordinate, Coordinate> came_from, Coordinate current) {
