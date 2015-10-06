@@ -12,6 +12,7 @@
  ******************************************************************************/
 package org.example.feature;
 
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,6 +39,7 @@ import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.FixPointAnchor;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.Graphiti;
+import org.example.feature.BaseManhattanConnectionRouter.Coordinate;
 
 
 /**
@@ -274,6 +276,7 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 				return reconstructPath(came_from, goal);
 			
 			}
+
 
 			openset.remove(current);
 			closedset.add(current);
