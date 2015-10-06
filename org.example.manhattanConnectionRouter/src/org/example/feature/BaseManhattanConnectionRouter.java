@@ -74,6 +74,8 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 	}
 
 	private AnchorVerifier anchorVerifier;
+	private Map<Coordinate, Integer> g_score;
+	private Map<Coordinate, Integer> f_score;
 
 	@Override
 	protected ConnectionRoute calculateRoute() {
@@ -219,9 +221,7 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 			this.x = x;
 			this.y = y;
 		}
-		
-		
-		
+
 		@Override
 		public String toString() {
 			return "Coordinate [x=" + x + ", y=" + y + "]";
@@ -263,18 +263,17 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 		openset.add(start);
 		Map<Coordinate, Coordinate> came_from = new HashMap<Coordinate, Coordinate>();
 
-		Map<Coordinate, Integer> g_score = new HashMap<Coordinate, Integer>();
+		g_score = new HashMap<Coordinate, Integer>();
 		g_score.put(start, 0);
 
-		Map<Coordinate, Integer> f_score = new HashMap<Coordinate, Integer>();
-		f_score.put(start, g_score.getOrDefault(start, Integer.MAX_VALUE)+heuristicCostEstimate(start, goal));
+		f_score = new HashMap<Coordinate, Integer>();
+		Integer currentGScore = getGScore(start);
+		f_score.put(start,currentGScore+heuristicCostEstimate(start, goal));
 
 		while(!openset.isEmpty()) {
 			Coordinate current = lowestFScore(f_score, openset);
-			System.out.println(current);
 			if(current.equals(goal)) {
 				return reconstructPath(came_from, goal);
-			
 			}
 
 
@@ -290,9 +289,9 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 					continue;
 				}
 
-				int tentative_g_score = Integer.valueOf(g_score.get(current)) + heuristicCostEstimate(current,neighbor); //the distance between current and neighbor is always 1
+				int tentative_g_score = Integer.valueOf( getGScore(current)) + heuristicCostEstimate(current,neighbor); //the distance between current and neighbor is always 1
 
-				if(!openset.contains(neighbor) || tentative_g_score < g_score.getOrDefault(current, Integer.MAX_VALUE)) {
+				if(!openset.contains(neighbor) || tentative_g_score < getGScore(current)) {
 					came_from.put(neighbor, current);
 					g_score.put(neighbor, tentative_g_score);
 					f_score.put(neighbor, tentative_g_score + heuristicCostEstimate(neighbor, goal));
@@ -305,6 +304,15 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 		alterResult.add(start);
 		alterResult.add(goal);
 		return alterResult;
+	}
+
+
+	private Integer getGScore(Coordinate start) {
+		Integer currentGScore = g_score.get(start);
+		if(currentGScore == null) {
+			currentGScore = Integer.MAX_VALUE;
+		}
+		return currentGScore;
 	}
 
 	public int heuristicCostEstimate(Coordinate a, Coordinate b) {
