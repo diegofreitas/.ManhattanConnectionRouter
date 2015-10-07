@@ -12,7 +12,6 @@
  ******************************************************************************/
 package org.example.feature;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,7 +38,6 @@ import org.eclipse.graphiti.mm.pictograms.ContainerShape;
 import org.eclipse.graphiti.mm.pictograms.FixPointAnchor;
 import org.eclipse.graphiti.mm.pictograms.Shape;
 import org.eclipse.graphiti.services.Graphiti;
-import org.example.feature.BaseManhattanConnectionRouter.Coordinate;
 
 
 /**
@@ -120,7 +118,7 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 		List<Point> reducedAstar = calculateSegments(astarResult);
 		route.getPoints().addAll(reducedAstar);
 		allRoutes.add(route);
-		System.out.println(route.isValid());
+		
 		drawConnectionRoutes(allRoutes);
 
 		return route;
@@ -149,8 +147,9 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 
 		for (int i=0; i<allShapes.size(); ++i) {
 			ContainerShape s = allShapes.get(i);
-			if (shape==s)
+			if (shape==s){
 				continue;
+			}
 			DetourPoints d = new DetourPoints(s, offset);
 			if (detour.intersects(d) && !detour.contains(d)) {
 				detour.merge(d);
@@ -182,20 +181,31 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 			Anchor anchor = iterator.next();
 			String property = Graphiti.getPeService().getPropertyValue(anchor, AnchorUtil.BOUNDARY_FIXPOINT_ANCHOR);
 			if (property != null && anchor instanceof FixPointAnchor) {
-				BoundaryAnchor a = new BoundaryAnchor();
-				a.anchor = (FixPointAnchor) anchor;
-				a.locationType = AnchorLocation.getLocation(property);
-				a.location = peService.getLocationRelativeToDiagram(anchor);
-				anchorList.add(a);
+				BoundaryAnchor boundaryAnchor = new BoundaryAnchor();
+				boundaryAnchor.anchor = (FixPointAnchor) anchor;
+				boundaryAnchor.locationType = AnchorLocation.getLocation(property);
+				boundaryAnchor.location = peService.getLocationRelativeToDiagram(anchor);
+				anchorList.add(boundaryAnchor);
 			}
 		}
 		return anchorList;
 	}
 
-	protected List<Point> calculateSegments(List<Coordinate> points) {
+	public List<Point> calculateSegments(List<Coordinate> points) {
 		List<Point> result = new ArrayList<Point>();
-
+			
 			for (int i = points.size() - 1; i >= 0; i--) {
+				
+//				if(((i > 0) && (i<points.size()))  && (points.get(i).y == points.get(i-1).y) && (points.get(i).y == points.get(i+1).y)){
+//					points.remove(points.get(i));
+//					continue;
+//				}
+//				if(((i > 0) && (i<points.size()))  && (points.get(i).x == points.get(i-1).x) && (points.get(i).x == points.get(i+1).x)){
+//					points.remove(points.get(i));
+//					continue;
+//				}
+				Point p=GraphicsUtil.createPoint(points.get(i).x, points.get(i).y);
+				
 				result.add(GraphicsUtil.createPoint(points.get(i).x, points.get(i).y));
 			}
 			
@@ -288,8 +298,8 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 					closedset.add(neighbor);
 					continue;
 				}
-
-				int tentative_g_score = Integer.valueOf( getGScore(current)) + heuristicCostEstimate(current,neighbor); //the distance between current and neighbor is always 1
+				int gScoreValue= Integer.valueOf(getGScore(current));
+				int tentative_g_score = gScoreValue + heuristicCostEstimate(current,neighbor); //the distance between current and neighbor is always 1
 
 				if(!openset.contains(neighbor) || tentative_g_score < getGScore(current)) {
 					came_from.put(neighbor, current);
