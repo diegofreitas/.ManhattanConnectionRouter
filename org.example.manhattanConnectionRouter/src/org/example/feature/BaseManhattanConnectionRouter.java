@@ -276,8 +276,6 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 			alterResult.add(start);
 			return alterResult;
 		}
-		System.out.println(start);
-		System.out.println(goal);
 		
 		
 		Set<Coordinate> closedset = new HashSet<Coordinate>();
