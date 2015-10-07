@@ -74,6 +74,7 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 	private AnchorVerifier anchorVerifier;
 	private Map<Coordinate, Integer> g_score;
 	private Map<Coordinate, Integer> f_score;
+	private Map<Coordinate, Coordinate> came_from;
 
 	@Override
 	protected ConnectionRoute calculateRoute() {
@@ -110,12 +111,14 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 
 		startP = GraphicsUtil.createPoint(sourceAnchor);
 		endP = GraphicsUtil.createPoint(targetAnchor);
-		Coordinate start = new Coordinate(startP.getX(), startP.getY());
-		Coordinate end = new Coordinate(endP.getX(), endP.getY());
+		int startModifier = AnchorUtil.getBoundaryAnchorLocation(sourceAnchor).equals(AnchorLocation.LEFT) ? -20 : 20;
+		int endModifier = AnchorUtil.getBoundaryAnchorLocation(targetAnchor).equals(AnchorLocation.LEFT) ? -20 : 20;
+		Coordinate start = new Coordinate(startP.getX()+startModifier, startP.getY());
+		Coordinate end = new Coordinate(endP.getX()+endModifier, endP.getY());
 		ConnectionRoute route = new ConnectionRoute(this, allRoutes.size()+1, source,target);
 
 		List<Coordinate> astarResult = aStar(start, end);
-		List<Point> reducedAstar = calculateSegments(astarResult);
+		List<Point> reducedAstar = calculateSegments(startP, astarResult, endP);
 		route.getPoints().addAll(reducedAstar);
 		allRoutes.add(route);
 		
@@ -191,20 +194,21 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 		return anchorList;
 	}
 
-	public List<Point> calculateSegments(List<Coordinate> points) {
+	public List<Point> calculateSegments(Point start, List<Coordinate> points, Point end) {
 		List<Point> result = new ArrayList<Point>();
+		result.add(start);
 		for (int i = points.size() - 1; i >= 0; i--) {
 			Coordinate curr = points.get(i);
 			if(i < 1 ){
 				result.add(GraphicsUtil.createPoint(curr.x, curr.y));
 				continue;
 			}
-			
+
 			if( i > points.size() - 2){
 				result.add(GraphicsUtil.createPoint(curr.x, curr.y));
 				continue;
 			}
-			
+
 			Coordinate prev = points.get(i+1);
 			Coordinate next = points.get(i-1);
 			if(prev.x==curr.x&&curr.x!=next.x) {
@@ -214,6 +218,7 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 				result.add(GraphicsUtil.createPoint(curr.x, curr.y));
 			}
 		}
+		result.add(end);
 		
 			
 		return result;
@@ -262,12 +267,23 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 
 	//Based on https://en.wikipedia.org/wiki/A*_search_algorithm
 	protected List<Coordinate> aStar(Coordinate start, Coordinate goal) {
+		if(getCollision(GraphicsUtil.createPoint(start.x, start.y),
+				GraphicsUtil.createPoint(start.x, start.y))!=null ||
+				getCollision(GraphicsUtil.createPoint(goal.x, goal.y),
+						GraphicsUtil.createPoint(goal.x, goal.y))!=null) {
+			List<Coordinate> alterResult = new ArrayList<Coordinate>();
+			alterResult.add(goal);
+			alterResult.add(start);
+			return alterResult;
+		}
+		System.out.println(start);
+		System.out.println(goal);
 		
 		
 		Set<Coordinate> closedset = new HashSet<Coordinate>();
 		Set<Coordinate> openset = new HashSet<Coordinate>();
 		openset.add(start);
-		Map<Coordinate, Coordinate> came_from = new HashMap<Coordinate, Coordinate>();
+		came_from = new HashMap<Coordinate, Coordinate>();
 
 		g_score = new HashMap<Coordinate, Integer>();
 		g_score.put(start, 0);
@@ -295,7 +311,7 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 					continue;
 				}
 				int gScoreValue= Integer.valueOf(getGScore(current));
-				int tentative_g_score = gScoreValue + heuristicCostEstimate(current,neighbor); //the distance between current and neighbor is always 1
+				int tentative_g_score = gScoreValue + heuristicCostEstimate(current,neighbor);
 
 				if(!openset.contains(neighbor) || tentative_g_score < getGScore(current)) {
 					came_from.put(neighbor, current);
@@ -318,6 +334,16 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 		if(currentGScore == null) {
 			currentGScore = Integer.MAX_VALUE;
 		}
+		else {
+			Coordinate parent = came_from.get(start);
+			if(parent!=null) {
+				Coordinate ancestor = came_from.get(parent);
+				if(ancestor!=null) {
+					currentGScore += (parent.x == ancestor.x && start.x != parent.x)
+							|| (parent.y == ancestor.y && start.y != parent.y) ? 12 : 0; // if the current node is a turn, make it weight more
+				}
+			}
+		}
 		return currentGScore;
 	}
 
@@ -338,11 +364,11 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 	protected List<Coordinate> neighborNodes(Coordinate current, Coordinate goal) {
 		List<Coordinate> list = new ArrayList<Coordinate>();
 		int heuristicCostEstimate  = remainingDistance(current, goal);
-		int step = heuristicCostEstimate > A_STEP ? A_STEP: heuristicCostEstimate ;
+		int step = heuristicCostEstimate > A_STEP ? A_STEP: heuristicCostEstimate;
 		list.add(new Coordinate(current.x+step, current.y));
-		list.add(new Coordinate(Math.abs(current.x-step), current.y));
+		if(current.x-step >= 0) list.add(new Coordinate(current.x-step, current.y));
 		list.add(new Coordinate(current.x, current.y+step));
-		list.add(new Coordinate(current.x, Math.abs(current.y-step)));
+		if(current.y-step >= 0) list.add(new Coordinate(current.x, current.y-step));
 		return list;
 	}
 	
