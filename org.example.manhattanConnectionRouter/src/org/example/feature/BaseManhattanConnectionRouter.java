@@ -193,33 +193,29 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 
 	public List<Point> calculateSegments(List<Coordinate> points) {
 		List<Point> result = new ArrayList<Point>();
-			
-			for (int i = points.size() - 1; i >= 0; i--) {
-				
-//				if(((i > 0) && (i<points.size()))  && (points.get(i).y == points.get(i-1).y) && (points.get(i).y == points.get(i+1).y)){
-//					points.remove(points.get(i));
-//					continue;
-//				}
-//				if(((i > 0) && (i<points.size()))  && (points.get(i).x == points.get(i-1).x) && (points.get(i).x == points.get(i+1).x)){
-//					points.remove(points.get(i));
-//					continue;
-//				}
-				Point p=GraphicsUtil.createPoint(points.get(i).x, points.get(i).y);
-				
-				result.add(GraphicsUtil.createPoint(points.get(i).x, points.get(i).y));
+		for (int i = points.size() - 1; i >= 0; i--) {
+			Coordinate curr = points.get(i);
+			if(i < 1 ){
+				result.add(GraphicsUtil.createPoint(curr.x, curr.y));
+				continue;
 			}
 			
-			/*Iterator<Coordinate> iter = points.iterator();
-			Coordinate prev = iter.next();
-			while(iter.hasNext()) {
-				Coordinate curr = iter.next();
-				Coordinate next = iter.next();
-				if(prev.x==curr.x&&curr.x!=next.x) result.add(GraphicsUtil.createPoint(curr.x, curr.y));
-				if(prev.y==curr.y&&curr.y!=next.y) result.add(GraphicsUtil.createPoint(curr.x, curr.y));
-				prev = iter.next();
-			}*/
+			if( i > points.size() - 2){
+				result.add(GraphicsUtil.createPoint(curr.x, curr.y));
+				continue;
+			}
+			
+			Coordinate prev = points.get(i+1);
+			Coordinate next = points.get(i-1);
+			if(prev.x==curr.x&&curr.x!=next.x) {
+				result.add(GraphicsUtil.createPoint(curr.x, curr.y));
+			}
+			if(prev.y==curr.y&&curr.y!=next.y){
+				result.add(GraphicsUtil.createPoint(curr.x, curr.y));
+			}
+		}
 		
-
+			
 		return result;
 	}
 	
