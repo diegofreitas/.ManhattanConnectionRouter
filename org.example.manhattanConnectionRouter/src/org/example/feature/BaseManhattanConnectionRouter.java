@@ -21,10 +21,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.eclipse.bpmn2.modeler.core.di.DIUtils;
 import org.eclipse.bpmn2.modeler.core.features.BendpointConnectionRouter;
 import org.eclipse.bpmn2.modeler.core.features.ConnectionRoute;
-import org.eclipse.bpmn2.modeler.core.features.DetourPoints;
 import org.eclipse.bpmn2.modeler.core.utils.AnchorUtil;
 import org.eclipse.bpmn2.modeler.core.utils.AnchorUtil.AnchorLocation;
 import org.eclipse.bpmn2.modeler.core.utils.AnchorUtil.BoundaryAnchor;
@@ -78,34 +76,16 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 
 	@Override
 	protected ConnectionRoute calculateRoute() {
-
 		if (isSelfConnection())
 			return super.calculateRoute();
 
-
-
 		// The list of all possible routes. The shortest will be used.
 		List<ConnectionRoute> allRoutes = new ArrayList<ConnectionRoute>();
+		
+		sourceAnchor = this.connection.getStart();
+		targetAnchor = this.connection.getEnd();
 
-		List <BoundaryAnchor> sourceBoundaryAnchors = getBoundaryAnchors(source);
-		List <BoundaryAnchor>  targetBoundaryAnchors = getBoundaryAnchors(target);
-
-		for (BoundaryAnchor sourceEntry : sourceBoundaryAnchors) {
-			FixPointAnchor potentialSourceAnchor = sourceEntry.anchor;
-			for (BoundaryAnchor targetEntry : targetBoundaryAnchors) {
-				FixPointAnchor potentialTargetAnchor = targetEntry.anchor;
-				if(anchorVerifier.isAnchorsFromSameConnection(potentialSourceAnchor, potentialTargetAnchor)){
-					sourceAnchor = potentialSourceAnchor;
-					targetAnchor = potentialTargetAnchor;
-					break;
-				}
-			}
-
-			if(sourceAnchor != null){
-				break;
-			}
-		}
-
+		
 		Point startP;
 		Point endP;
 
@@ -141,40 +121,6 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 	@Override
 	protected List<ContainerShape> findAllShapes() {
 		return super.findAllShapes();
-	}
-
-	protected DetourPoints getDetourPoints(ContainerShape shape) {
-		DetourPoints detour = new DetourPoints(shape, offset);
-		if (allShapes==null)
-			findAllShapes();
-
-		for (int i=0; i<allShapes.size(); ++i) {
-			ContainerShape s = allShapes.get(i);
-			if (shape==s){
-				continue;
-			}
-			DetourPoints d = new DetourPoints(s, offset);
-			if (detour.intersects(d) && !detour.contains(d)) {
-				detour.merge(d);
-				i = -1;
-			}
-		}
-
-		return detour;
-	}
-
-	protected void finalizeConnection() {
-	}
-
-	protected boolean fixCollisions() {
-		return false;
-	}
-
-	protected boolean calculateAnchors() {
-		return false;
-	}
-	protected void updateConnection() {
-		DIUtils.updateDIEdge(ffc);
 	}
 
 	protected List <BoundaryAnchor> getBoundaryAnchors(Shape s) {
