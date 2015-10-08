@@ -64,12 +64,11 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 	static boolean testRouteSolver = false;
 	
 
-	public BaseManhattanConnectionRouter(IFeatureProvider fp, AnchorVerifier anchorVerifier) {
+	public BaseManhattanConnectionRouter(IFeatureProvider fp) {
 		super(fp);
-		this.anchorVerifier = anchorVerifier;
 	}
 
-	private AnchorVerifier anchorVerifier;
+
 	private Map<Coordinate, Integer> g_score;
 	private Map<Coordinate, Integer> f_score;
 	private Map<Coordinate, Coordinate> came_from;
@@ -183,6 +182,10 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 		public String toString() {
 			return "Coordinate [x=" + x + ", y=" + y + "]";
 		}
+		
+	    public Point asPoint(){
+	    	return GraphicsUtil.createPoint(x, y);
+	    }
 
 
 
@@ -245,15 +248,27 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 
 			openset.remove(current);
 			closedset.add(current);
+			OUT:
 			for(Coordinate neighbor:neighborNodes(current, goal)) {
 				if(closedset.contains(neighbor)) continue;
-				ContainerShape hadCollision = getCollision(GraphicsUtil.createPoint(neighbor.x, neighbor.y),
-						GraphicsUtil.createPoint(neighbor.x, neighbor.y));
+				ContainerShape hadCollision = getCollision(current.asPoint(),
+						neighbor.asPoint());
 				
 				if(hadCollision!=null) {
 					closedset.add(neighbor);
 					continue;
 				}
+				
+				List<Connection> crossings = findCrossings(current.asPoint(), neighbor.asPoint());
+				for (Connection c : crossings) {
+					if (c!=this.connection){
+						closedset.add(neighbor);
+						break OUT;
+					}
+				}
+
+				
+				
 				int gScoreValue= Integer.valueOf(getGScore(current));
 				int tentative_g_score = gScoreValue + heuristicCostEstimate(current,neighbor);
 
