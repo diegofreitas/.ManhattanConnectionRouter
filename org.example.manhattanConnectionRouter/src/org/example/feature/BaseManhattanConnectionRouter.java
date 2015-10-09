@@ -255,14 +255,12 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 						neighbor.asPoint());
 				
 				if(hadCollision!=null) {
-					closedset.add(neighbor);
 					continue;
 				}
 				
 				List<Connection> crossings = findCrossings(current.asPoint(), neighbor.asPoint());
 				for (Connection c : crossings) {
 					if (c!=this.connection){
-						closedset.add(neighbor);
 						break OUT;
 					}
 				}
@@ -270,13 +268,18 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 				
 				
 				int gScoreValue= Integer.valueOf(getGScore(current));
-				int tentative_g_score = gScoreValue + heuristicCostEstimate(current,neighbor);
+				int tentative_g_score = gScoreValue + 10;
+				Coordinate parent = came_from.get(current);
+				if(parent!=null) {
+					if(current.x==parent.x&&neighbor.x!=current.x ||
+							current.y==parent.y&&neighbor.y!=current.y) tentative_g_score += 5;
+				}
 
-				if(!openset.contains(neighbor) || tentative_g_score < getGScore(current)) {
+				if(!openset.contains(neighbor) || tentative_g_score<getGScore(neighbor)) {
+					openset.add(neighbor);
 					came_from.put(neighbor, current);
 					g_score.put(neighbor, tentative_g_score);
 					f_score.put(neighbor, tentative_g_score + heuristicCostEstimate(neighbor, goal));
-					openset.add(neighbor);
 				}
 			}
 		}
@@ -291,16 +294,11 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 	private Integer getGScore(Coordinate start) {
 		Integer currentGScore = g_score.get(start);
 		if(currentGScore == null) {
-			currentGScore = Integer.MAX_VALUE;
-		}
-		else {
+			currentGScore = 10;
 			Coordinate parent = came_from.get(start);
-			if(parent!=null) {
-				Coordinate ancestor = came_from.get(parent);
-				if(ancestor!=null) {
-					currentGScore += (parent.x == ancestor.x && start.x != parent.x)
-							|| (parent.y == ancestor.y && start.y != parent.y) ? 12 : 0; // if the current node is a turn, make it weight more
-				}
+			while(parent!=null) {
+				currentGScore += g_score.get(parent);
+				parent = came_from.get(parent);
 			}
 		}
 		return currentGScore;
