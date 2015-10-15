@@ -12,8 +12,8 @@ import org.eclipse.graphiti.mm.pictograms.Diagram;
 
 public class ExtendedManhattanConnectionRouter extends BaseManhattanConnectionRouter {
 
-	public ExtendedManhattanConnectionRouter(IFeatureProvider fp, AnchorVerifier av) {
-		super(fp, av);
+	public ExtendedManhattanConnectionRouter(IFeatureProvider fp) {
+		super(fp);
 	}
 
 	protected List<ContainerShape> findAllShapes() {
