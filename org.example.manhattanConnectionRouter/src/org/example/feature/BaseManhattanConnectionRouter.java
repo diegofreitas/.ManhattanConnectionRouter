@@ -450,12 +450,12 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 				DetourPoints detour = getDetourPoints(shape);
 				// this should be a vertical segment - navigate around the shape
 				// go up or down from here?
-				boolean detourUp = end.getY() - start.getY() < 0;
+				boolean detourUp = (end.getY() - start.getY() > 0);
 				int dyTop = Math.abs(p.getY() - detour.topLeft.getY());
 				int dyBottom = Math.abs(p.getY() - detour.bottomLeft.getY());
 				if (dy<dyTop || dy<dyBottom)
 					detourUp = dyTop < dyBottom;
-				
+
 				if (p.getX() > start.getX()) {
 					p.setX( detour.topLeft.getX() );
 					route.add(p);
@@ -540,16 +540,18 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 		return route.isValid();
 	}
 	
+
 	protected DetourPoints getDetourPoints(ContainerShape shape) {
 		DetourPoints detour = new DetourPoints(shape, offset);
 		if (allShapes==null)
 			findAllShapes();
-
+		
 		for (int i=0; i<allShapes.size(); ++i) {
 			ContainerShape s = allShapes.get(i);
 			if (shape==s)
 				continue;
 			DetourPoints d = new DetourPoints(s, offset);
+			
 			if (detour.intersects(d) && !detour.contains(d)) {
 				detour.merge(d);
 				i = -1;
