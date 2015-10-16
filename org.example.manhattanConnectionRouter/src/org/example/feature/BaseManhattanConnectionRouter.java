@@ -224,7 +224,6 @@ public class BaseManhattanConnectionRouter extends BendpointConnectionRouter {
 					}
 
 				}
-				GraphicsUtil.dump("    "+r.toString());
 			}
 
 			GraphicsUtil.dump("Sorting Routes:\n------------------");

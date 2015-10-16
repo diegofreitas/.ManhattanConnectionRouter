@@ -6,6 +6,7 @@ import org.eclipse.bpmn2.modeler.core.utils.AnchorUtil;
 import org.eclipse.graphiti.features.IFeatureProvider;
 import org.eclipse.graphiti.features.context.IContext;
 import org.eclipse.graphiti.features.context.IMoveBendpointContext;
+import org.eclipse.graphiti.features.context.impl.LayoutContext;
 import org.eclipse.graphiti.features.impl.DefaultMoveBendpointFeature;
 import org.eclipse.graphiti.mm.pictograms.FreeFormConnection;
 import org.eclipse.graphiti.mm.pictograms.Shape;
@@ -34,7 +35,7 @@ public class MoveBendPointFeature extends DefaultMoveBendpointFeature {
 				AnchorUtil.setConnectionPointLocation(connectionPointShape, context.getX(), context.getY());
 
 			BendpointConnectionRouter.setMovedBendpoint(connection, context.getBendpointIndex());
-			ConnectionFeatureContainer.updateConnection(getFeatureProvider(), connection);
+			new LayoutConnectionFeature(getFeatureProvider()).layout(new LayoutContext(connection));
 
 
 		} catch (Exception e) {
